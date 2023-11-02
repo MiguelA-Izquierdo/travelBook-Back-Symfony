@@ -1,6 +1,6 @@
 <?php
 
-namespace Entity;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 /**
@@ -8,11 +8,11 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="user")
  */
 class User {
-    /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="AUTO")
-     */
+   /**
+ * @ORM\Id
+ * @ORM\Column(type="integer")
+ * @ORM\GeneratedValue(strategy="AUTO")
+ */
     private $id;
 
     /**
@@ -40,11 +40,10 @@ class User {
      */
     private $lastName;
 
-    /**
-     * @ORM\OneToOne(targetEntity="ImgData")
-     * @ORM\JoinColumn(name="avatar_id", referencedColumnName="id")
-     */
-    private $avatar;
+   /**
+ * @ORM\Column(type="json", nullable=true)
+ */
+private $avatar;
 
     // Getters and setters
     public function getId() {
