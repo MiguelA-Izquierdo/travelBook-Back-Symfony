@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Entity\User as EntityUser;
 
 class UsersController extends AbstractController
@@ -42,8 +43,9 @@ class UsersController extends AbstractController
     /**
      * @Route("/users", name="create_user", methods={"POST"})
      */
-    public function create(Request $request, EntityManagerInterface $entityManager) {
+    public function create(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher) {
         $requestData = json_decode($request->getContent(), true);
+        $plainPassword = 'contrasena_secreta';
 
         // Crear una nueva instancia de la entidad User
         $user = new User();
@@ -52,7 +54,8 @@ class UsersController extends AbstractController
         $user->setEmail($requestData['email']);
         $user->setFirstName($requestData['firstName']);
         $user->setLastName($requestData['lastName']);
-
+        $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
+        $user->setPassword($hashedPassword);
         $entityManager->persist($user);
         $entityManager->flush();
 

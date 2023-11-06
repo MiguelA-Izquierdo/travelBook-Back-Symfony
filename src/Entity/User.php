@@ -3,11 +3,12 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 /**
  * @ORM\Entity
  * @ORM\Table(name="user")
  */
-class User {
+class User implements PasswordAuthenticatedUserInterface {
    /**
  * @ORM\Id
  * @ORM\Column(type="integer")
@@ -62,7 +63,11 @@ private $avatar;
         $this->password = $password;
     }
 
-    public function getPassword() {
+    /**
+     * @return string the hashed password for this user
+     */
+    public function getPassword(): string
+    {
         return $this->password;
     }
 
