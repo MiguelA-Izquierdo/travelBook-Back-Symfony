@@ -9,12 +9,13 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
  * @ORM\Table(name="user")
  */
 class User implements PasswordAuthenticatedUserInterface {
-   /**
+ 
+  /**
  * @ORM\Id
  * @ORM\Column(type="integer")
  * @ORM\GeneratedValue(strategy="AUTO")
  */
-    private $id;
+private $id;
 
     /**
      * @ORM\Column(type="string")

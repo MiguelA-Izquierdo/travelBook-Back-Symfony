@@ -95,4 +95,42 @@ class UsersController extends AbstractController
 
         return new JsonResponse(['user' => $user], Response::HTTP_CREATED);
     }
+
+    /**
+     * @Route("/users/{id}", name="update_user", methods={"PATCH"})
+     */
+    public function update(int $id, Request $request)
+    {
+        $user = $this->userRepository->find($id);
+        
+
+        if (!$user) {
+            return new JsonResponse(['message' => 'Usuario no encontrado'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $requestData = json_decode($request->getContent(), true);
+
+        // Comprueba y actualiza los campos del usuario con los datos recibidos en la solicitud
+        try {
+            if (isset($requestData['userName'])) {
+                $user->setUserName($requestData['userName']);
+            }
+            if (isset($requestData['email'])) {
+                $user->setEmail($requestData['email']);
+            }
+            if (isset($requestData['firstName'])) {
+                $user->setFirstName($requestData['firstName']);
+            }
+            if (isset($requestData['lastName'])) {
+                $user->setLastName($requestData['lastName']);
+            }
+
+            $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+            return new JsonResponse(['message' => 'Usuario actualizado'], JsonResponse::HTTP_OK);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => 'Error al actualizar el usuario'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
