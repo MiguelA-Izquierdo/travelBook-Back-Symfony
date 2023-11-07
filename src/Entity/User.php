@@ -4,11 +4,13 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
+
 /**
  * @ORM\Entity
  * @ORM\Table(name="user")
  */
-class User implements PasswordAuthenticatedUserInterface {
+class User implements PasswordAuthenticatedUserInterface, UserInterface {
  
   /**
  * @ORM\Id
@@ -102,5 +104,26 @@ private $avatar;
 
     public function getAvatar() {
         return $this->avatar;
+    }
+
+    public function eraseCredentials()
+    {
+        // Deja este método vacío, ya que no necesitas realizar ninguna acción específica aquí
+    }
+
+    public function getUserIdentifier(): string
+{
+    return $this->getUsername();
+}
+   
+
+
+    public function getRoles(): array
+    {
+        $roles = [];
+        // guarantee every user at least has ROLE_USER
+        $roles[] = 'ROLE_USER';
+
+        return array_unique($roles);
     }
 }

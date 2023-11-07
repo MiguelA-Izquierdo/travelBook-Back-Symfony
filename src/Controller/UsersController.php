@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\User\AuthService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,11 +16,13 @@ class UsersController extends AbstractController
 {
     private $entityManager;
     private $userRepository;
+    private $authService;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, AuthService $authService)
     {
         $this->entityManager = $entityManager;
         $this->userRepository = $entityManager->getRepository(User::class);
+        $this->authService = $authService;
     }
 
     /**
@@ -31,19 +34,10 @@ class UsersController extends AbstractController
 
         $userData = [];
         foreach ($users as $user) {
-            $userData[] = [
-                'id' => $user->getId(),
-                'userName' => $user->getUserName(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-            ];
+            $userData[] = $this->serializeUser($user);
         }
 
-        return new JsonResponse([
-            'success' => true,
-            'data' => $userData
-        ]);
+        return $this->json(['success' => true, 'data' => $userData]);
     }
 
     /**
@@ -55,28 +49,14 @@ class UsersController extends AbstractController
         $plainPassword = 'contrasena_secreta';
 
         $user = new User();
-        $user->setUserName($requestData['userName']);
-        $user->setPassword($requestData['password']);
-        $user->setEmail($requestData['email']);
-        $user->setFirstName($requestData['firstName']);
-        $user->setLastName($requestData['lastName']);
-
-        $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-        $user->setPassword($hashedPassword);
+        $this->updateUserFromRequest($user, $requestData, $passwordHasher, $plainPassword);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        $userData = [
-            'id' => $user->getId(),
-            'userName' => $user->getUserName(),
-            'password' => $user->getPassword(),
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-        ];
+        $userData = $this->serializeUser($user);
 
-        return new JsonResponse(['user' => $userData], Response::HTTP_CREATED);
+        return $this->json(['user' => $userData], Response::HTTP_CREATED);
     }
 
     /**
@@ -93,44 +73,88 @@ class UsersController extends AbstractController
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
-        return new JsonResponse(['user' => $user], Response::HTTP_CREATED);
+        return $this->json(['user' => $this->serializeUser($user)], Response::HTTP_OK);
     }
 
     /**
      * @Route("/users/{id}", name="update_user", methods={"PATCH"})
      */
-    public function update(int $id, Request $request)
+    public function update(int $id, Request $request, UserPasswordHasherInterface $passwordHasher)
     {
         $user = $this->userRepository->find($id);
-        
 
         if (!$user) {
-            return new JsonResponse(['message' => 'Usuario no encontrado'], JsonResponse::HTTP_NOT_FOUND);
+            return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
         $requestData = json_decode($request->getContent(), true);
+        $plainPassword = 'contrasena_secreta';
 
-        // Comprueba y actualiza los campos del usuario con los datos recibidos en la solicitud
-        try {
-            if (isset($requestData['userName'])) {
-                $user->setUserName($requestData['userName']);
-            }
-            if (isset($requestData['email'])) {
-                $user->setEmail($requestData['email']);
-            }
-            if (isset($requestData['firstName'])) {
-                $user->setFirstName($requestData['firstName']);
-            }
-            if (isset($requestData['lastName'])) {
-                $user->setLastName($requestData['lastName']);
-            }
+        $this->updateUserFromRequest($user, $requestData, $passwordHasher, $plainPassword);
 
-            $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-            return new JsonResponse(['message' => 'Usuario actualizado'], JsonResponse::HTTP_OK);
-        } catch (\Exception $e) {
-            return new JsonResponse(['message' => 'Error al actualizar el usuario'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        return $this->json(['message' => 'Usuario actualizado'], Response::HTTP_OK);
+    }
+
+
+    /**
+     * @Route("users/login", name="user_login", methods={"POST"})
+     */
+    public function login(Request $request, UserPasswordHasherInterface $passwordHasher)
+{
+    $requestData = json_decode($request->getContent(), true);
+    $username = $requestData['userName'];
+    $password = $requestData['password'];
+
+    // Verifica las credenciales del usuario utilizando el UserPasswordHasherInterface
+    $user = $this->userRepository->findOneBy(['userName' => $username]);
+    if (!$user) {
+        return $this->json(['message' => 'Credenciales incorrectas'], Response::HTTP_UNAUTHORIZED);
+    }
+
+    if ($passwordHasher->isPasswordValid($user, $password)) {
+        // Las credenciales son correctas, genera un token JWT
+       
+        $token = $this->authService->createJWT($user);
+
+        return $this->json(['token' => $token]);
+    } else {
+        // Las credenciales son incorrectas
+        return $this->json(['message' => 'Credenciales incorrectas'], Response::HTTP_UNAUTHORIZED);
+    }
+    }
+
+
+    private function updateUserFromRequest(User $user, array $requestData, UserPasswordHasherInterface $passwordHasher, string $plainPassword)
+    {
+        if (isset($requestData['userName'])) {
+            $user->setUserName($requestData['userName']);
         }
+        if (isset($requestData['email'])) {
+            $user->setEmail($requestData['email']);
+        }
+        if (isset($requestData['firstName'])) {
+            $user->setFirstName($requestData['firstName']);
+        }
+        if (isset($requestData['lastName'])) {
+            $user->setLastName($requestData['lastName']);
+        }
+
+        if (isset($requestData['password'])) {
+            $hashedPassword = $passwordHasher->hashPassword($user, $requestData['password']);
+            $user->setPassword($hashedPassword);
+        }
+    }
+
+    private function serializeUser(User $user)
+    {
+        return [
+            'id' => $user->getId(),
+            'userName' => $user->getUserName(),
+            'email' => $user->getEmail(),
+            'firstName' => $user->getFirstName(),
+            'lastName' => $user->getLastName(),
+        ];
     }
 }

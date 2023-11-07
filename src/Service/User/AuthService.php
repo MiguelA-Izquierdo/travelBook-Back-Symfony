@@ -2,7 +2,7 @@
 namespace App\Service\User;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+
 
 use App\Exceptions\HttpError;
 use Error;
@@ -10,17 +10,16 @@ use Error;
 class AuthService 
 {
     private $jwtManager;
-    private $passwordEncoder;
 
     public function __construct(JWTTokenManagerInterface $jwtManager)
     {
         $this->jwtManager = $jwtManager;
     }
 
-    public function createJWT($payload)
+    public function createJWT($user)
     {
         // Crea un token JWT utilizando el servicio JWTTokenManager
-        return $this->jwtManager->create($payload);
+        return $this->jwtManager->create($user);
     }
 
     public function verifyJWTAndGetPayload($token)

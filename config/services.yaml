@@ -24,5 +24,4 @@ services:
         tags: ['controller.service_arguments']
 
     App\Service\AuthService:
-        arguments:
-            - '@security.password_encoder'
+        public: true
