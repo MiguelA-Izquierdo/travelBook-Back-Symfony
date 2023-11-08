@@ -8,7 +8,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="user")
+ * @ORM\Table(name="users")
  */
 class User implements PasswordAuthenticatedUserInterface, UserInterface {
  
@@ -20,7 +20,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface {
 private $id;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", length=255, unique=true)
      */
     private $userName;
 
@@ -30,7 +30,7 @@ private $id;
     private $password;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", unique=true)
      */
     private $email;
 
@@ -42,10 +42,10 @@ private $id;
     /**
      * @ORM\Column(type="string")
      */
-    private $lastName;
+    private string $lastName;
 
    /**
- * @ORM\Column(type="json", nullable=true)
+ * @ORM\Column(type="string", nullable=true)
  */
 private $avatar;
 

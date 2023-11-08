@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 
