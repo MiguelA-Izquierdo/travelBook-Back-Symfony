@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\User;
+use App\Entity\UserFormType;
 use App\Service\User\AuthService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,39 +41,40 @@ class UsersController extends AbstractFOSRestController
 
     #[Route(path: "api/users", name: "create_user", methods: ["POST"])]
     #[ViewAttribute(serializerGroups: ['user'], serializerEnableMaxDepthChecks: true)]
-   public function create(Request $request, UserPasswordHasherInterface $passwordHasher, SerializerInterface $serializer)
-{
-    $requestData = json_decode($request->getContent(), true);
-    $plainPassword = 'contrasena_secreta';
+    public function create(Request $request, UserPasswordHasherInterface $passwordHasher, SerializerInterface $serializer)
+    {
+        $requestData = json_decode($request->getContent(), true);
 
-    $user = new User();
-    $this->updateUserFromRequest($user, $requestData, $passwordHasher, $plainPassword);
+        $user = new User();
+        $form = $this->createForm(UserFormType::class, $user);
+        $form->handleRequest($request);
 
-    $this->entityManager->persist($user);
-    $this->entityManager->flush();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $hashedPassword = $passwordHasher->hashPassword($user, $requestData['password']);
+            $user->setPassword($hashedPassword);
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+            $serializedUser = $serializer->serialize($user, 'json', ['groups' => 'user']);
+            return new JsonResponse($serializedUser, Response::HTTP_CREATED, [], true);
+        }
+      
+    }
 
-    $serializedUser = $serializer->serialize($user, 'json', [
-        'groups' => 'user',
-    ]);
-
-    return new JsonResponse($serializedUser, Response::HTTP_CREATED, [], true);
-}
-
-    #[Route(path: "/users/{id}", name: "delete_user", methods: ["DELETE"])]
+    #[Route(path: "api/users/{id}", name: "delete_user", methods: ["DELETE"])]
     #[ViewAttribute(serializerGroups: ['user'], serializerEnableMaxDepthChecks: true)]
     public function delete(int $id)
     {
-    $user = $this->userRepository->find($id);
+        $user = $this->userRepository->find($id);
 
-    if (!$user) {
-        return $this->json(['error' => 'El usuario no fue encontrado.'], Response::HTTP_NOT_FOUND);
+        if (!$user) {
+            return $this->json(['error' => 'El usuario no fue encontrado.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
+
+        return $this->json(['message' => 'El usuario ha sido eliminado con éxito.'], Response::HTTP_OK);
     }
-
-    $this->entityManager->remove($user);
-    $this->entityManager->flush();
-
-    return $this->json(['message' => 'El usuario ha sido eliminado con éxito.'], Response::HTTP_OK);
-}
 
     #[Route(path: "api/users/{id}", name: "update_user", methods: ["PATCH"])]
     #[ViewAttribute(serializerGroups: ['user'], serializerEnableMaxDepthChecks: true)]
@@ -104,7 +106,7 @@ class UsersController extends AbstractFOSRestController
 
         $user = $this->userRepository->findOneBy(['userName' => $username]);
         if (!$user) {
-            return $this->json(['message' => 'Credenciales incorrectas'], Response::HTTP_UNAUTHORIZED);
+            return $this->json(['message' => 'Usuario incorrecto'], Response::HTTP_UNAUTHORIZED);
         }
 
         if ($passwordHasher->isPasswordValid($user, $password)) {

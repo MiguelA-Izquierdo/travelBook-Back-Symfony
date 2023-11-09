@@ -10,14 +10,14 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * @ORM\Entity
  * @ORM\Table(name="users")
  */
-class User implements PasswordAuthenticatedUserInterface, UserInterface {
- 
-  /**
- * @ORM\Id
- * @ORM\Column(type="integer")
- * @ORM\GeneratedValue(strategy="AUTO")
- */
-private $id;
+class User implements PasswordAuthenticatedUserInterface, UserInterface
+{
+    /**
+     * @ORM\Id
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
 
     /**
      * @ORM\Column(type="string", length=255, unique=true)
@@ -44,25 +44,29 @@ private $id;
      */
     private string $lastName;
 
-   /**
- * @ORM\Column(type="string", nullable=true)
- */
-private $avatar;
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $avatar;
 
     // Getters and setters
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
-    public function setUserName($userName) {
+    public function setUserName($userName)
+    {
         $this->userName = $userName;
     }
 
-    public function getUserName() {
+    public function getUserName()
+    {
         return $this->userName;
     }
 
-    public function setPassword($password) {
+    public function setPassword($password)
+    {
         $this->password = $password;
     }
 
@@ -74,54 +78,60 @@ private $avatar;
         return $this->password;
     }
 
-    public function setEmail($email) {
+    public function setEmail($email)
+    {
         $this->email = $email;
     }
 
-    public function getEmail() {
+    public function getEmail()
+    {
         return $this->email;
     }
 
-    public function setFirstName($firstName) {
+    public function setFirstName($firstName)
+    {
         $this->firstName = $firstName;
     }
 
-    public function getFirstName() {
+    public function getFirstName()
+    {
         return $this->firstName;
     }
 
-    public function setLastName($lastName) {
+    public function setLastName($lastName)
+    {
         $this->lastName = $lastName;
     }
 
-    public function getLastName() {
+    public function getLastName()
+    {
         return $this->lastName;
     }
 
-    public function setAvatar($avatar) {
+    public function setAvatar($avatar)
+    {
         $this->avatar = $avatar;
     }
 
-    public function getAvatar() {
+    public function getAvatar()
+    {
         return $this->avatar;
     }
 
     public function eraseCredentials()
     {
-        // Deja este método vacío, ya que no necesitas realizar ninguna acción específica aquí
+        
     }
 
     public function getUserIdentifier(): string
-{
-    return $this->getUsername();
-}
-   
-
+    {
+        return $this->getUsername();
+    }
 
     public function getRoles(): array
     {
         $roles = [];
-        // guarantee every user at least has ROLE_USER
+        // garantiza que cada usuario al menos tenga ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
