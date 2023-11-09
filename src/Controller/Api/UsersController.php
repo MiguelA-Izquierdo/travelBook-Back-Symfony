@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations\View as ViewAttribute;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -56,8 +57,10 @@ class UsersController extends AbstractFOSRestController
             $this->entityManager->flush();
             $serializedUser = $serializer->serialize($user, 'json', ['groups' => 'user']);
             return new JsonResponse($serializedUser, Response::HTTP_CREATED, [], true);
+        } else {
+        $errors = $this->getFormErrors($form);
+        return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
-      
     }
 
     #[Route(path: "api/users/{id}", name: "delete_user", methods: ["DELETE"])]
@@ -83,17 +86,26 @@ class UsersController extends AbstractFOSRestController
         $user = $this->userRepository->find($id);
 
         if (!$user) {
-            return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+          return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        $requestData = json_decode($request->getContent(), true);
-        $plainPassword = 'contrasena_secreta';
+      $form = $this->createForm(UserFormType::class, $user);
 
-        $this->updateUserFromRequest($user, $requestData, $passwordHasher, $plainPassword);
+      $form->submit(json_decode($request->getContent(), true), false); 
 
-        $this->entityManager->flush();
+      if ($form->isValid()) {
+          $password = $form->get('password')->getData();
+          if ($password) {
+            $hashedPassword = $passwordHasher->hashPassword($user, $password);
+            $user->setPassword($hashedPassword);
+          }
 
-        return $this->json(['message' => 'Usuario actualizado'], Response::HTTP_OK);
+          $this->entityManager->flush();
+
+          return $this->json(['message' => 'Usuario actualizado'], Response::HTTP_OK);
+      }
+
+      return $this->json(['errors' => $this->getFormErrors($form)], Response::HTTP_BAD_REQUEST);
     }
 
     #[Route(path: "api/users/login", name: "user_login", methods: ["POST"])]
@@ -105,36 +117,24 @@ class UsersController extends AbstractFOSRestController
         $password = $requestData['password'];
 
         $user = $this->userRepository->findOneBy(['userName' => $username]);
-        if (!$user) {
-            return $this->json(['message' => 'Usuario incorrecto'], Response::HTTP_UNAUTHORIZED);
-        }
 
-        if ($passwordHasher->isPasswordValid($user, $password)) {
-            $token = $this->authService->createJWT($user);
-            return $this->json(['token' => $token]);
-        } else {
+        if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
             return $this->json(['message' => 'Credenciales incorrectas'], Response::HTTP_UNAUTHORIZED);
         }
+
+        $token = $this->authService->createJWT($user);
+
+        return $this->json(['token' => $token]);
     }
 
-    private function updateUserFromRequest(User $user, array $requestData, UserPasswordHasherInterface $passwordHasher, string $plainPassword)
+    private function getFormErrors(FormInterface $form): array
     {
-        if (isset($requestData['userName'])) {
-            $user->setUserName($requestData['userName']);
-        }
-        if (isset($requestData['email'])) {
-            $user->setEmail($requestData['email']);
-        }
-        if (isset($requestData['firstName'])) {
-            $user->setFirstName($requestData['firstName']);
-        }
-        if (isset($requestData['lastName'])) {
-            $user->setLastName($requestData['lastName']);
-        }
+      $errors = [];
+      foreach ($form->getErrors(true, true) as $error) {
+        $fieldName = $error->getOrigin()->getName();
+        $errors[$fieldName] = $error->getMessage();
+      }
 
-        if (isset($requestData['password'])) {
-            $hashedPassword = $passwordHasher->hashPassword($user, $requestData['password']);
-            $user->setPassword($hashedPassword);
-        }
+      return $errors;
     }
 }
