@@ -1,0 +1,31 @@
+App\Entity\User:
+    properties:
+        userName:
+            - NotBlank: ~
+            - Length:
+                min: 3
+                max: 255
+                minMessage: 'El nombre de usuario debe tener al menos {{ limit }} caracteres'
+                maxMessage: 'El nombre de usuario no puede tener más de {{ limit }} caracteres'
+        password:
+            - NotBlank: ~
+        email:
+            - NotBlank: ~
+            - Email:
+                mode: strict
+                message: 'El correo electrónico no es válido'
+        firstName:
+            - NotBlank: ~
+            - Length:
+                min: 3
+                max: 255
+                minMessage: 'El nombre debe tener al menos {{ limit }} caracteres'
+                maxMessage: 'El nombre no puede tener más de {{ limit }} caracteres'
+        lastName:
+            - NotBlank: ~
+            - Length:
+                min: 3
+                max: 255
+                minMessage: 'El apellido debe tener al menos {{ limit }} caracteres'
+                maxMessage: 'El apellido no puede tener más de {{ limit }} caracteres'
+
