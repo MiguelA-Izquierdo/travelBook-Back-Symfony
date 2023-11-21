@@ -3,6 +3,7 @@ namespace App\Service;
 
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 class MediaFileService
@@ -10,6 +11,7 @@ class MediaFileService
     public function __construct(
         private string $targetDirectory,
         private SluggerInterface $slugger,
+        private UrlGeneratorInterface $urlGenerator
     ) {
     }
 
@@ -25,7 +27,9 @@ class MediaFileService
             // ... handle exception if something happens during file upload
         }
 
-        return $fileName;
+        $url = $this->urlGenerator->generate('route_name_to_show_image', ['filename' => $fileName], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return $url;
     }
 
     public function getTargetDirectory(): string

@@ -135,27 +135,20 @@ class UsersController extends AbstractFOSRestController
     #[Route(path: "/api/users/upload", name: "upload_photo", methods: ["POST"])]
     public function uploadPhoto(Request $request, MediaFileService $fileUploader)
     {
-      
-        // Crear un formulario para manejar la carga de archivos
         $image = new Image();
         $form = $this->createForm(ImageFormType::class, $image, );
-        // Manejar la solicitud del formulario
-
         $form->handleRequest($request);
   
         if ($form->isSubmitted() && $form->isValid()){
-            // Obtener el archivo cargado desde el formulario
             $brochureFile = $form->get('brochure')->getData();
 
-            // Verificar si se ha proporcionado un archivo
             if ($brochureFile) {
-                // Utilizar el servicio de carga de archivos para subir el archivo
+
                 $brochureFileName = $fileUploader->upload($brochureFile);
 
                 // Aquí puedes realizar acciones adicionales, como guardar el nombre del archivo en la base de datos
                 // o asociarlo a una entidad específica (por ejemplo, un usuario)
 
-                // Devolver una respuesta exitosa
                 return $this->json(['message' => 'File uploaded successfully', 'filename' => $brochureFileName], Response::HTTP_OK);
             }
         }else {
@@ -163,7 +156,6 @@ class UsersController extends AbstractFOSRestController
         return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        // Si el formulario no es válido o no se ha proporcionado un archivo, devolver una respuesta de error
     }
 
     private function getFormErrors(FormInterface $form): array
