@@ -2,11 +2,8 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\Image;
 use App\Entity\User;
 use App\Entity\UserFormType;
-use App\Form\Type\ImageFormType;
-use App\Service\MediaFileService;
 use App\Service\User\AuthService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -129,33 +126,6 @@ class UsersController extends AbstractFOSRestController
         $token = $this->authService->createJWT($user);
 
         return $this->json(['token' => $token]);
-    }
-
-    
-    #[Route(path: "/api/users/upload", name: "upload_photo", methods: ["POST"])]
-    public function uploadPhoto(Request $request, MediaFileService $fileUploader)
-    {
-        $image = new Image();
-        $form = $this->createForm(ImageFormType::class, $image, );
-        $form->handleRequest($request);
-  
-        if ($form->isSubmitted() && $form->isValid()){
-            $brochureFile = $form->get('brochure')->getData();
-
-            if ($brochureFile) {
-
-                $brochureFileName = $fileUploader->upload($brochureFile);
-
-                // Aquí puedes realizar acciones adicionales, como guardar el nombre del archivo en la base de datos
-                // o asociarlo a una entidad específica (por ejemplo, un usuario)
-
-                return $this->json(['message' => 'File uploaded successfully', 'filename' => $brochureFileName], Response::HTTP_OK);
-            }
-        }else {
-        $errors = $this->getFormErrors($form);
-        return new JsonResponse(['errors' => $errors], Response::HTTP_BAD_REQUEST);
-        }
-
     }
 
     private function getFormErrors(FormInterface $form): array

@@ -12,8 +12,7 @@ class MediaFileService
         private string $targetDirectory,
         private SluggerInterface $slugger,
         private UrlGeneratorInterface $urlGenerator
-    ) {
-    }
+    ) {}
 
     public function upload(UploadedFile $file): string
     {
@@ -27,7 +26,7 @@ class MediaFileService
             // ... handle exception if something happens during file upload
         }
 
-        $url = $this->urlGenerator->generate('route_name_to_show_image', ['filename' => $fileName], UrlGeneratorInterface::ABSOLUTE_URL);
+        $url = $this->urlGenerator->generate('show_image', ['filename' => $fileName], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return $url;
     }
