@@ -3,7 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\User;
-use App\Entity\UserFormType;
+use App\Form\Type\UserFormType;
 use App\Service\User\AuthService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +14,7 @@ use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations\View as ViewAttribute;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
 
@@ -66,12 +67,19 @@ class UsersController extends AbstractFOSRestController
 
     #[Route(path: "api/users/{id}", name: "delete_user", methods: ["DELETE"])]
     #[ViewAttribute(serializerGroups: ['user'], serializerEnableMaxDepthChecks: true)]
-    public function delete(int $id)
+    public function delete(int $id, TokenStorageInterface $tokenStorage)
     {
         $user = $this->userRepository->find($id);
 
         if (!$user) {
             return $this->json(['error' => 'El usuario no fue encontrado.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $authenticatedUser = $tokenStorage->getToken()->getUser();
+        assert($authenticatedUser instanceof User);
+      
+        if ($authenticatedUser->getId() !== $user->getId()) {
+            return $this->json(['message' => 'No tienes permisos para eliminar este usuario.'], Response::HTTP_FORBIDDEN);
         }
 
         $this->entityManager->remove($user);
@@ -82,31 +90,39 @@ class UsersController extends AbstractFOSRestController
 
     #[Route(path: "api/users/{id}", name: "update_user", methods: ["PATCH"])]
     #[ViewAttribute(serializerGroups: ['user'], serializerEnableMaxDepthChecks: true)]
-    public function update(int $id, Request $request, UserPasswordHasherInterface $passwordHasher)
+    public function update(int $id, Request $request, UserPasswordHasherInterface $passwordHasher, TokenStorageInterface $tokenStorage)
     {
         $user = $this->userRepository->find($id);
-
         if (!$user) {
           return $this->json(['message' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-      $form = $this->createForm(UserFormType::class, $user);
+        $authenticatedUser = $tokenStorage->getToken()->getUser();
+        assert($authenticatedUser instanceof User);
+      
+        if ($authenticatedUser->getId() !== $user->getId()) {
+            return $this->json(['message' => 'No tienes permisos para editar este usuario.'], Response::HTTP_FORBIDDEN);
+        }
 
-      $form->submit(json_decode($request->getContent(), true), false); 
+        $form = $this->createForm(UserFormType::class, $user);
+        $form->get('password')->setData(null);
+        // $form->get('password')->getConfig()->getOptions()['mapped'] = false;
+        $form->submit(json_decode($request->getContent(), true), false); 
 
-      if ($form->isValid()) {
-          $password = $form->get('password')->getData();
-          if ($password) {
-            $hashedPassword = $passwordHasher->hashPassword($user, $password);
-            $user->setPassword($hashedPassword);
-          }
+        if ($form->isValid()) {
+            $password = $form->get('password')->getData();
+            if ($password) {
+                print_r($password);
+                $hashedPassword = $passwordHasher->hashPassword($user, $password);
+                $user->setPassword($hashedPassword);
+            }
 
           $this->entityManager->flush();
-
           return $this->json(['message' => 'Usuario actualizado'], Response::HTTP_OK);
-      }
+        }
 
-      return $this->json(['errors' => $this->getFormErrors($form)], Response::HTTP_BAD_REQUEST);
+        return $this->json(['errors' => $this->getFormErrors($form)], Response::HTTP_BAD_REQUEST);
+    
     }
 
     #[Route(path: "api/users/login", name: "user_login", methods: ["POST"])]

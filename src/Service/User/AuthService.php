@@ -18,8 +18,14 @@ class AuthService
 
     public function createJWT($user)
     {
+        $payload = [
+            'id' => $user->getId(),
+            'exp' => time() + 3600, // Token expira en 1 hora
+            // Otros claims según tus necesidades
+        ];
+        
         // Crea un token JWT utilizando el servicio JWTTokenManager
-        return $this->jwtManager->create($user);
+        return $this->jwtManager->create($user, $payload);
     }
 
     public function verifyJWTAndGetPayload($token)
