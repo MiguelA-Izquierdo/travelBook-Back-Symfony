@@ -31,6 +31,7 @@ security:
   
     access_control:
         - { path: ^/api/users/list, roles: PUBLIC_ACCESS  }
+        - { path: ^/api/tasks/list, roles: PUBLIC_ACCESS  }
         - { path: ^/api/users/login, roles: PUBLIC_ACCESS  }
         - { path: ^/api/users,       roles: [PUBLIC_ACCESS], methods: POST }
         - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
