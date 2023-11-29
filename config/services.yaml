@@ -34,3 +34,5 @@ services:
     App\Service\FirestoreService:
         arguments:
             $serviceAccountFilePath: '%kernel.project_dir%/config/todo-638a2-firebase-adminsdk-8empg-709fa00651.json'
+
+    

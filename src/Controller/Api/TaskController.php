@@ -2,11 +2,9 @@
 
 namespace App\Controller\Api;
 
-header("Access-Control-Allow-Origin:*");
 use App\Entity\Task;
 use App\Form\Type\TaskFormType;
 use App\Service\FirestoreService;
-use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations\View as ViewAttribute;
 use Symfony\Component\HttpFoundation\JsonResponse;
