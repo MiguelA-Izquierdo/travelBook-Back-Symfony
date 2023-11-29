@@ -22,7 +22,7 @@ class WebSocketController implements MessageComponentInterface
 
     public function onMessage(ConnectionInterface $from, $msg)
     {
-        // Puedes manejar el mensaje recibido aquí y enviar respuestas a los clientes
+        
         foreach ($this->clients as $client) {
             if ($client !== $from) {
                 $client->send($msg);
@@ -40,5 +40,5 @@ class WebSocketController implements MessageComponentInterface
     {
         echo "Error: {$e->getMessage()}\n";
         $conn->close();
-    }
+    }           
 }
